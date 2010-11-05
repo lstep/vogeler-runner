@@ -20,10 +20,10 @@ except ImportError:
     import json
 
 class Manager(object):
-    def __init__(self,config):
+    def __init__(self,config, options):
         self.config = config
+        self.options = options
         self.broadcast_exchange = config.get('main', 'broadcast_exchange')
-        self.routing_key = 'broadcasts.*'
 
         self.ch = self.setup_amqp()
 
@@ -44,14 +44,14 @@ class Manager(object):
             sys.exit(1)
         return ch
 
-    def message(self, message, durable=True):
+    def message(self, message, routing_key, durable=True):
         try:
             log.debug("Vogeler is sending a message")
             msg = amqp.Message(json.dumps(message))
             if durable:
                 msg.properties['delivery_mode'] = 2
             self.ch.basic_publish(msg, exchange=self.broadcast_exchange,
-                                       routing_key=self.routing_key)
+                                       routing_key=routing_key)
         except Exception,e:
             log.fatal("Could not publish message to the queue")
 
@@ -71,12 +71,26 @@ class Manager(object):
         self.process_request(message)
 
 
-def main(config,infos,args):
+def main(config,options,args):
     print "vogelerunner version",version
 
-    m = Manager(config)
-    routing_key = 'broadcasts.*'
-    command = {'myrequest': 'facter',}
-    m.message(command)
-    log.info('Sending %s to %s' % (command, 'all'))
+    m = Manager(config, options)
+
+    # Choose the plugin(s) to use
+    if options.plugins:
+        plugins = options.plugins.split(',')
+    else:
+        plugins = ['facter','dpkg','ps']
+
+    # Choose the destination (only one for now)
+    if options.machine:
+        destination = options.machine
+    else:
+        destination = 'broadcasts.*'
+
+    for plugin in plugins:
+        command = {'myrequest': plugin,}
+        log.info('Sending %s to %s' % (command, destination))
+        m.message(message=command, routing_key=destination)
+
 

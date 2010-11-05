@@ -135,8 +135,10 @@ def main():
     parser.add_option('-a', '--action', help="Action", dest="action")
     parser.add_option('-v', '--verbose', dest='verbose', action='count',
                       help="Increase verbosity (specify multiple times for more)")
-    parser.add_option('-s', '--disksize', dest='disksize', default=5, type='int',
-                      help="Specifier la taille du disque a creer")
+    parser.add_option('-x', '--plugins', default=None,
+                      help='Choose plugins to execute')
+    parser.add_option('-n', '--machine', default=None,
+                      help='Choose on which machine to execute the plugin')
     parser.add_option("-r", "--reinit", default=False, action="store_true",
                       help="reinitialize the configuration with the default files")
     parser.add_option("-d", "--daemonize", default=False, action="store_true",
